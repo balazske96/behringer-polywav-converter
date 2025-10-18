@@ -64,3 +64,12 @@ Processing file 2 of 3: track2.wav
 - Splits multi-channel WAV files into separate mono WAV files.
 - Provides progress feedback for each file being processed.
 - Handles large files efficiently by processing in chunks.
+
+### Notes on Running the Built Software
+
+- The built software should be placed **one directory above** the files that need to be processed.
+- Open the software through the terminal by navigating to its location and running it directly. For example:
+  ```bash
+  ./WingSplitter-win-x64
+  ```
+- Do not open the executable by double-clicking it, as it may not function correctly in that context.
