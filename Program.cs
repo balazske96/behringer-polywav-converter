@@ -16,17 +16,29 @@ namespace BehringerPolywavConverter
             Console.WriteLine("Polywav converter for Behringer Wing based records.");
             Console.WriteLine("Usage: behringer-polywav-converter <input_folder> <output_folder>");
 
-            // Check if the input arguments are given
-            if (args.Length < 2)
+            // Ask for the input folder
+            Console.Write("Please enter the path to the input folder: ");
+            string inputDir = Console.ReadLine()?.Trim();
+
+            // Ask for the output folder
+            Console.Write("Please enter the path to the output folder: ");
+            string outputDir = Console.ReadLine()?.Trim();
+
+            // Ensure the input directory is not null or empty
+            if (string.IsNullOrWhiteSpace(inputDir))
             {
-                Console.Write("Not enough arguments provided. ");
-                Console.WriteLine("Usage: behringer-polywav-converter <input_folder> <output_folder>");
+                Console.WriteLine("❌ Input folder path cannot be empty.");
                 return;
             }
 
-            string inputDir = args[0];
-            string outputDir = args[1];
+            // Ensure the output directory is not null or empty
+            if (string.IsNullOrWhiteSpace(outputDir))
+            {
+                Console.WriteLine("❌ Output folder path cannot be empty.");
+                return;
+            }
 
+            // Validate the input and output directories
             ValidateDirectory(directory: inputDir, shouldCreate: false, shouldBeEmpty: false);
             ValidateDirectory(directory: outputDir, shouldCreate: true, shouldBeEmpty: true);
 
