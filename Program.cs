@@ -65,10 +65,16 @@ namespace BehringerPolywavConverter
                 writers[channelIndex] = new WaveFileWriter(outPath, new WaveFormat(sampleRate, 1));
             }
 
+            // Track the total number of files and the current file index
+            int totalFiles = files.Count;
+            int currentFileIndex = 0;
+
             // Process each file
             foreach (var file in files)
             {
-                Console.WriteLine($"→ {Path.GetFileName(file)}");
+                currentFileIndex++;
+                Console.WriteLine($"Processing file {currentFileIndex} of {totalFiles}: {Path.GetFileName(file)}");
+
                 using var reader = new WaveFileReader(file);
                 var provider = reader.ToSampleProvider();
 
@@ -76,27 +82,32 @@ namespace BehringerPolywavConverter
                 int blockSize = 4096;
 
                 // Create a buffer to hold audio samples for all channels
-                // The buffer size is blockSize multiplied by the number of channels
                 float[] buffer = new float[blockSize * channels];
 
-                // Variable to store the number of samples read in each iteration
-                int read;
+                // Calculate the total number of samples in the file
+                long totalSamples = reader.Length / (reader.WaveFormat.BitsPerSample / 8);
+                long processedSamples = 0;
 
-                // Read audio samples in chunks until the end of the file
+                int read;
                 while ((read = provider.Read(buffer, 0, buffer.Length)) > 0)
                 {
-                    // Iterate through the buffer in steps of the number of channels
+                    processedSamples += read;
+
+                    // Calculate and display progress percentage
+                    double progress = (double)processedSamples / totalSamples * 100;
+                    Console.Write($"\rProgress: {progress:F2}%");
+
                     for (int i = 0; i < read; i += channels)
                     {
-                        // Write each channel's sample to its corresponding output file
                         for (int c = 0; c < channels; c++)
                         {
-                            // Ensure the index is within bounds before writing the sample
                             if (i + c < read)
                                 writers[c].WriteSample(buffer[i + c]);
                         }
                     }
                 }
+
+                Console.WriteLine(); // Move to the next line after progress
             }
 
             // Clean up and close all writers
