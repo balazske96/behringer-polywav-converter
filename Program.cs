@@ -14,8 +14,6 @@ namespace BehringerPolywavConverter
         {
             // Introduction
             Console.WriteLine("Polywav converter for Behringer Wing based records.");
-            Console.WriteLine("Usage: behringer-polywav-converter <input_folder> <output_folder>");
-
             // Ask for the input folder
             Console.Write("Please enter the path to the input folder: ");
             string inputDir = Console.ReadLine()?.Trim();
@@ -23,6 +21,11 @@ namespace BehringerPolywavConverter
             // Ask for the output folder
             Console.Write("Please enter the path to the output folder: ");
             string outputDir = Console.ReadLine()?.Trim();
+
+            // Ask for the channel list file
+            Console.Write("Please enter the path to the channel list file (optional): ");
+            string? readChannelList = Console.ReadLine();
+            string channelListFile = readChannelList != null ? readChannelList.Trim() : "";
 
             // Ensure the input directory is not null or empty
             if (string.IsNullOrWhiteSpace(inputDir))
@@ -36,6 +39,30 @@ namespace BehringerPolywavConverter
             {
                 Console.WriteLine("❌ Output folder path cannot be empty.");
                 return;
+            }
+
+            // Check if channel list file exists (if provided)
+            List<string> channelNames = new List<string>();
+            if (!string.IsNullOrWhiteSpace(channelListFile))
+            {
+                if (!File.Exists(channelListFile))
+                {
+                    Console.WriteLine($"❌ Channel list file '{channelListFile}' does not exist. Using default channel naming.");
+                }
+                else
+                {
+                    try
+                    {
+                        // Read all lines from the channel list file
+                        channelNames = File.ReadAllLines(channelListFile).ToList();
+                        Console.WriteLine($"✅ Read {channelNames.Count} channel names from '{channelListFile}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Error reading channel list file: {ex.Message}. Using default channel naming.");
+                        channelNames.Clear();
+                    }
+                }
             }
 
             // Validate the input and output directories
@@ -61,7 +88,30 @@ namespace BehringerPolywavConverter
             var writers = new WaveFileWriter[channels];
             for (int channelIndex = 0; channelIndex < channels; channelIndex++)
             {
-                string outPath = Path.Combine(outputDir, $"channel_{channelIndex + 1:D2}.wav");
+                // Get channel name from list or use default
+                string channelName;
+
+                // If we have a valid channel name from the list, use it
+                if (channelIndex < channelNames.Count && !string.IsNullOrWhiteSpace(channelNames[channelIndex]))
+                {
+                    // Limit channel name to 32 characters
+                    channelName = channelNames[channelIndex].Length > 32
+                        ? channelNames[channelIndex].Substring(0, 32)
+                        : channelNames[channelIndex];
+
+                    // Replace any characters that are invalid for filenames
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                    {
+                        channelName = channelName.Replace(c, '_');
+                    }
+                }
+                else
+                {
+                    // Use default naming if no name is available
+                    channelName = $"channel_{channelIndex + 1:D2}";
+                }
+
+                string outPath = Path.Combine(outputDir, $"{channelName}.wav");
                 writers[channelIndex] = new WaveFileWriter(outPath, new WaveFormat(sampleRate, 1));
             }
 
@@ -112,7 +162,13 @@ namespace BehringerPolywavConverter
 
             // Clean up and close all writers
             foreach (var w in writers) w.Dispose();
-            Console.WriteLine($"✅ Done! Created {channels} WAV files in {outputDir}");
+
+            // Display completion message
+            string namingInfo = !string.IsNullOrWhiteSpace(channelListFile) && File.Exists(channelListFile)
+                ? $" using names from '{channelListFile}'"
+                : " with default naming";
+
+            Console.WriteLine($"✅ Done! Created {channels} WAV files in {outputDir}{namingInfo}");
         }
 
         public static void ValidateDirectory(string directory, bool shouldCreate, bool shouldBeEmpty)
