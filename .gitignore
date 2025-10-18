@@ -57,3 +57,4 @@ nunit-*.xml
 input_test_files/
 output_test_files/
 build/
+test_data/
